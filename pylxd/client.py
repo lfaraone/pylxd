@@ -293,7 +293,15 @@ class Client(object):
             self.host_info = response.json()['metadata']
 
         except (requests.exceptions.ConnectionError,
-                requests.exceptions.InvalidURL):
+                requests.exceptions.InvalidURL) as e:
+            if isinstance(e, requests.exceptions.ConnectionError):
+                # args[0] is the Requests exception object,
+                # reason is from OpenSSL (or similiar)
+                raise exceptions.ClientConnectionFailed(e.args[0].reason)
+
+            if isinstance(e, requests.exceptions.InvalidURL):
+                raise exceptions.ClientConnectionFailed(e.args)
+
             raise exceptions.ClientConnectionFailed()
 
         self.certificates = managers.CertificateManager(self)
